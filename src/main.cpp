@@ -1,6 +1,7 @@
 #include <Arduino.h>
 
-unsigned char buffer;
+IntervalTimer sampleTimer;
+void sendSample();
 
 void setup()
 {
@@ -15,10 +16,18 @@ void setup()
   pinMode(7, INPUT);
 
   Serial.begin(9600); // uses maximum frequency for USB = 12MHz
+
+  sampleTimer.begin(sendSample, 1000);
 }
 
 void loop()
 {
+}
+
+void sendSample()
+{
+  unsigned char buffer;
+
   buffer = digitalReadFast(0) << 0;
   buffer |= digitalReadFast(1) << 1;
   buffer |= digitalReadFast(2) << 2;
@@ -28,5 +37,5 @@ void loop()
   buffer |= digitalReadFast(6) << 6;
   buffer |= digitalReadFast(7) << 7;
 
-  Serial.println(buffer, BIN);
+  Serial.write(buffer);
 }
