@@ -3,6 +3,8 @@
 IntervalTimer sampleTimer;
 void sendSample();
 
+volatile unsigned char buffer;
+
 void setup()
 {
   // input pins = PORT D register
@@ -17,18 +19,12 @@ void setup()
 
   Serial.begin(9600); // uses maximum frequency for USB = 12MHz
 
-  sampleTimer.begin(sendSample, 1000);
+  sampleTimer.begin(sendSample, 2);
 }
 
 void loop()
 {
-}
-
-void sendSample()
-{
-  unsigned char buffer;
-
-  buffer = digitalReadFast(0) << 0;
+  buffer |= digitalReadFast(0) << 0;
   buffer |= digitalReadFast(1) << 1;
   buffer |= digitalReadFast(2) << 2;
   buffer |= digitalReadFast(3) << 3;
@@ -36,6 +32,11 @@ void sendSample()
   buffer |= digitalReadFast(5) << 5;
   buffer |= digitalReadFast(6) << 6;
   buffer |= digitalReadFast(7) << 7;
+}
 
+void sendSample()
+{
   Serial.write(buffer);
+
+  buffer = 0;
 }
