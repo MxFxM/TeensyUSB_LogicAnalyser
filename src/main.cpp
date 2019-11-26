@@ -1,3 +1,13 @@
+/*
+This is the code for an Logic Analyser.
+Before starting to send samples, the Teensy waits to receive 3 bytes sampling rate.
+The sampling rate is in Hz.
+The maximum sample rate supported is 500ksps.
+If you go higher I guarantee for nothing.
+
+Once started, the Teensy sends samples (one byte) of the first 8 Pins at the set rate.
+*/
+
 #include <Arduino.h>
 
 IntervalTimer sampleTimer;
@@ -7,7 +17,6 @@ volatile unsigned char buffer;
 
 void setup()
 {
-  // input pins = PORT D register
   pinMode(0, INPUT);
   pinMode(1, INPUT);
   pinMode(2, INPUT);
@@ -19,11 +28,26 @@ void setup()
 
   Serial.begin(9600); // uses maximum frequency for USB = 12MHz
 
-  sampleTimer.begin(sendSample, 2);
+  int count = 0;
+  char buf[3]; // 3 bytes fits 500k
+
+  while (count < 3) // wait for 3 bytes of sample rate
+  {
+    if (Serial.available()) // next byte available
+    {
+      buf[count++] = Serial.read(); // receive all 3 bytes into "buf"
+    }
+  }
+
+  int complete = buf[0] << 16 | buf[1] << 8 | buf[2]; // put buffers together to form one 24bit value
+  int period = 1000000 / complete;                    // get time in us between samples
+
+  sampleTimer.begin(sendSample, period);
 }
 
 void loop()
 {
+  // with 600MHz this runs so fast, that all computes between two sends
   buffer |= digitalReadFast(0) << 0;
   buffer |= digitalReadFast(1) << 1;
   buffer |= digitalReadFast(2) << 2;
@@ -36,7 +60,6 @@ void loop()
 
 void sendSample()
 {
-  Serial.write(buffer);
-
-  buffer = 0;
+  Serial.write(buffer); // write latest value
+  buffer = 0;           // clear buffer
 }
